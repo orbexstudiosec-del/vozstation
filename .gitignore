@@ -1,0 +1,13 @@
+# Credenciales reales - nunca subir a git
+includes/config.php
+db.txt
+
+# Desarrollo local (SQLite)
+database/local.sqlite
+includes/config.local.php
+local_server.log
+.cookies_test*.txt
+
+# Contenido subido desde el panel (se sube por el panel, no por git)
+assets/img/uploads/*
+!assets/img/uploads/.htaccess
