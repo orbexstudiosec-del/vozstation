@@ -25,6 +25,15 @@ CREATE TABLE IF NOT EXISTS `schedule` (
   `sort_order` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `slides` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `image` VARCHAR(255) NOT NULL,
+  `title` VARCHAR(150) DEFAULT NULL,
+  `subtitle` VARCHAR(255) DEFAULT NULL,
+  `link_url` VARCHAR(255) DEFAULT NULL,
+  `sort_order` INT DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Usuario administrador por defecto
 -- Usuario: admin | Contraseña: changeme123
 -- IMPORTANTE: cambia esta contraseña apenas ingreses al panel
@@ -40,6 +49,8 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('logo', 'assets/img/logo.png'),
 ('stream_url', 'https://stream.zeno.fm/f3wvbbqmdg8uv'),
 ('stream_format', 'mp3'),
+('video_stream_url', ''),
+('ad_banner_text', 'Impulsa tu marca en nuestra señal en vivo y llega a miles de oyentes cada día.'),
 ('phone', '+593 98 261 1896'),
 ('whatsapp', '593982611896'),
 ('email', 'contacto@vozstation.com'),

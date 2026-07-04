@@ -24,6 +24,15 @@ CREATE TABLE schedule (
   sort_order INTEGER DEFAULT 0
 );
 
+CREATE TABLE slides (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  image VARCHAR(255) NOT NULL,
+  title VARCHAR(150),
+  subtitle VARCHAR(255),
+  link_url VARCHAR(255),
+  sort_order INTEGER DEFAULT 0
+);
+
 -- Usuario: admin | Contraseña: changeme123
 INSERT INTO admins (username, password) VALUES
 ('admin', '$2y$10$THFVBXTGMTadIjKC8qORpu4lrlLRKC0ZFKUu8PDCCZRUuosubQQ7a');
@@ -36,6 +45,8 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('logo', 'assets/img/logo.png'),
 ('stream_url', 'https://stream.zeno.fm/f3wvbbqmdg8uv'),
 ('stream_format', 'mp3'),
+('video_stream_url', ''),
+('ad_banner_text', 'Impulsa tu marca en nuestra señal en vivo y llega a miles de oyentes cada día.'),
 ('phone', '+593 98 261 1896'),
 ('whatsapp', '593982611896'),
 ('email', 'contacto@vozstation.com'),

@@ -11,7 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $fields = [
         'site_name', 'tagline', 'description', 'about_text',
-        'stream_url', 'stream_format', 'phone', 'whatsapp', 'email', 'address',
+        'stream_url', 'stream_format', 'video_stream_url', 'ad_banner_text',
+        'phone', 'whatsapp', 'email', 'address',
         'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'primary_color', 'secondary_color',
     ];
 
@@ -156,7 +157,21 @@ function v(string $key): string
           <?php endforeach; ?>
         </select>
       </div>
+      <div class="col-12">
+        <hr>
+        <label class="form-label">URL del video / TV en vivo (HLS .m3u8)</label>
+        <input type="url" name="video_stream_url" class="form-control" value="<?= v('video_stream_url') ?>"
+               placeholder="https://tuservidor.com/tv/stream.m3u8">
+        <div class="form-text">Opcional. Si la dejas vacía, la sección de TV en vivo no se muestra en el sitio.</div>
+      </div>
     </div>
+  </div>
+
+  <div class="admin-card">
+    <h2 class="h5 mb-3">Banner "Anúnciate con nosotros"</h2>
+    <label class="form-label">Texto del banner</label>
+    <textarea name="ad_banner_text" class="form-control" rows="2"><?= v('ad_banner_text') ?></textarea>
+    <div class="form-text">Aparece como una franja destacada en la portada. El botón del banner usa tu número de WhatsApp de la sección de Contacto.</div>
   </div>
 
   <div class="admin-card">

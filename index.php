@@ -5,6 +5,7 @@ global $DAYS_ES;
 
 $settings = get_all_settings();
 $schedule = get_schedule();
+$slides   = get_slides();
 
 $site_name   = get_setting('site_name', 'VozStation');
 $tagline     = get_setting('tagline');
@@ -13,11 +14,16 @@ $about_text  = get_setting('about_text');
 $logo        = get_setting('logo');
 $hero_image  = get_setting('hero_image');
 $stream_url  = get_setting('stream_url');
+$video_stream_url = get_setting('video_stream_url');
+$ad_banner_text   = get_setting('ad_banner_text');
 $phone       = get_setting('phone');
 $whatsapp    = get_setting('whatsapp');
 $email       = get_setting('email');
 $address     = get_setting('address');
 $primary_color   = get_setting('primary_color', '#e50914');
+$share_url  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
+            . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/';
+$share_text = $site_name . ($tagline ? ' - ' . $tagline : '');
 $secondary_color = get_setting('secondary_color', '#1e6fe8');
 
 $socials = [
@@ -67,6 +73,9 @@ $socials = [
       <ul class="navbar-nav ms-auto gap-lg-3 align-items-lg-center">
         <li class="nav-item"><a class="nav-link active" href="#inicio">Inicio</a></li>
         <li class="nav-item"><a class="nav-link" href="#programacion">Programación</a></li>
+        <?php if ($video_stream_url): ?>
+          <li class="nav-item"><a class="nav-link" href="#inicio" id="nav-tv-link">TV en vivo</a></li>
+        <?php endif; ?>
         <li class="nav-item"><a class="nav-link" href="#nosotros">Nosotros</a></li>
         <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
         <li class="nav-item">
@@ -85,18 +94,56 @@ $socials = [
   </div>
 </nav>
 
+<?php if ($slides): ?>
+<div id="cubeSlider" class="cube-slider">
+  <div class="cube-stage" id="cubeStage">
+    <div class="cube-face cube-face-front" id="cubeFaceFront"></div>
+    <div class="cube-face cube-face-right" id="cubeFaceRight"></div>
+    <div class="cube-face cube-face-left" id="cubeFaceLeft"></div>
+  </div>
+  <?php if (count($slides) > 1): ?>
+    <button class="carousel-control-prev" type="button" id="cubePrevBtn">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Anterior</span>
+    </button>
+    <button class="carousel-control-next" type="button" id="cubeNextBtn">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Siguiente</span>
+    </button>
+    <div class="cube-indicators" id="cubeIndicators">
+      <?php foreach ($slides as $i => $slide): ?>
+        <button type="button" data-index="<?= $i ?>" class="<?= $i === 0 ? 'active' : '' ?>" aria-label="Slide <?= $i + 1 ?>"></button>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+</div>
+<script>
+  window.VOZSTATION_SLIDES = <?= json_encode(array_map(function ($slide) {
+      return [
+          'image' => $slide['image'],
+          'title' => $slide['title'],
+          'subtitle' => $slide['subtitle'],
+          'link' => $slide['link_url'],
+      ];
+  }, $slides), JSON_UNESCAPED_SLASHES) ?>;
+</script>
+<?php endif; ?>
+
 <header class="hero <?= $hero_image ? 'has-bg-image' : '' ?>" id="inicio"
         <?php if ($hero_image): ?>
         style="background-image: linear-gradient(90deg, rgba(8,9,12,.85) 0%, rgba(8,9,12,.55) 45%, rgba(8,9,12,.25) 100%), url('<?= e($hero_image) ?>'); background-size: cover; background-position: center;"
         <?php endif; ?>>
+  <div class="hero-waveform" aria-hidden="true">
+    <?php for ($i = 0; $i < 32; $i++): ?><span></span><?php endfor; ?>
+  </div>
   <div class="container">
     <div class="row align-items-center g-5">
       <div class="col-lg-6">
         <span class="live-badge mb-3"><span class="live-dot"></span> ESCÚCHANOS EN VIVO 24/7</span>
-        <h1 class="mt-3"><?= e($site_name) ?></h1>
-        <p class="tagline"><?= e($tagline) ?></p>
-        <p class="text-secondary"><?= e($description) ?></p>
-        <div class="d-flex gap-3 mt-4 flex-wrap align-items-center">
+        <h1 class="mt-3 hero-fade-2"><?= e($site_name) ?></h1>
+        <p class="tagline hero-fade-3"><?= e($tagline) ?></p>
+        <p class="text-secondary hero-fade-3"><?= e($description) ?></p>
+        <div class="d-flex gap-3 mt-4 flex-wrap align-items-center hero-fade-4">
           <a href="#programacion" class="btn btn-outline-light btn-lg">Ver programación</a>
           <div class="social-icons mb-0">
             <?php foreach ($socials as $key => $meta): ?>
@@ -110,25 +157,80 @@ $socials = [
         </div>
       </div>
       <div class="col-lg-6">
-        <div class="player-card">
-          <div class="d-flex align-items-center gap-3">
-            <button id="play-btn" class="play-btn" aria-label="Reproducir">
-              <i id="play-icon" class="bi bi-play-fill"></i>
-            </button>
-            <div class="flex-grow-1">
-              <div class="now-playing-label">Transmisión en vivo</div>
-              <div class="now-playing-title"><?= e($site_name) ?></div>
-              <div id="player-status" class="text-secondary small">En pausa</div>
+        <?php if ($video_stream_url): ?>
+          <ul class="nav nav-pills player-tabs mb-3" id="playerTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="radio-tab-btn" data-bs-toggle="pill"
+                      data-bs-target="#radio-tab-pane" type="button" role="tab">
+                <i class="bi bi-broadcast me-1"></i> Radio
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tv-tab-btn" data-bs-toggle="pill"
+                      data-bs-target="#tv-tab-pane" type="button" role="tab">
+                <i class="bi bi-tv me-1"></i> TV en vivo
+              </button>
+            </li>
+          </ul>
+        <?php endif; ?>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="radio-tab-pane">
+            <div class="player-card">
+              <div class="d-flex align-items-center gap-3">
+                <button id="play-btn" class="play-btn" aria-label="Reproducir">
+                  <i id="play-icon" class="bi bi-play-fill"></i>
+                </button>
+                <div class="flex-grow-1">
+                  <div class="now-playing-label">Transmisión en vivo</div>
+                  <div class="now-playing-title"><?= e($site_name) ?></div>
+                  <div id="player-status" class="text-secondary small">En pausa</div>
+                </div>
+              </div>
+              <canvas id="visualizer" class="visualizer-canvas" height="64"></canvas>
+              <div class="volume-row d-flex align-items-center gap-2 mt-3">
+                <button id="mute-btn" class="mute-btn" aria-label="Silenciar">
+                  <i id="mute-icon" class="bi bi-volume-up text-secondary"></i>
+                </button>
+                <input type="range" class="form-range" id="volume-slider" min="0" max="1" step="0.05" value="0.8">
+              </div>
+              <div class="share-row d-flex align-items-center gap-2 mt-3">
+                <span class="share-label">Compartir</span>
+                <button id="native-share-btn" class="share-btn d-none" aria-label="Compartir"
+                        data-share-url="<?= e($share_url) ?>" data-share-text="<?= e($share_text) ?>">
+                  <i class="bi bi-share-fill"></i>
+                </button>
+                <a class="share-btn" target="_blank" rel="noopener" aria-label="Compartir en WhatsApp"
+                   href="https://api.whatsapp.com/send?text=<?= urlencode($share_text . ' ' . $share_url) ?>">
+                  <i class="bi bi-whatsapp"></i>
+                </a>
+                <a class="share-btn" target="_blank" rel="noopener" aria-label="Compartir en Facebook"
+                   href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($share_url) ?>">
+                  <i class="bi bi-facebook"></i>
+                </a>
+                <a class="share-btn" target="_blank" rel="noopener" aria-label="Compartir en X"
+                   href="https://twitter.com/intent/tweet?text=<?= urlencode($share_text) ?>&url=<?= urlencode($share_url) ?>">
+                  <i class="bi bi-twitter-x"></i>
+                </a>
+                <button id="copy-link-btn" class="share-btn" aria-label="Copiar enlace" data-share-url="<?= e($share_url) ?>">
+                  <i class="bi bi-link-45deg"></i>
+                </button>
+              </div>
+              <audio id="radio-audio" data-stream-url="<?= e($stream_url) ?>" preload="none"></audio>
             </div>
           </div>
-          <canvas id="visualizer" class="visualizer-canvas" height="64"></canvas>
-          <div class="volume-row d-flex align-items-center gap-2 mt-3">
-            <button id="mute-btn" class="mute-btn" aria-label="Silenciar">
-              <i id="mute-icon" class="bi bi-volume-up text-secondary"></i>
-            </button>
-            <input type="range" class="form-range" id="volume-slider" min="0" max="1" step="0.05" value="0.8">
-          </div>
-          <audio id="radio-audio" data-stream-url="<?= e($stream_url) ?>" preload="none"></audio>
+          <?php if ($video_stream_url): ?>
+            <div class="tab-pane fade" id="tv-tab-pane">
+              <div class="video-player-card">
+                <div class="video-wrapper">
+                  <video id="tv-video" data-stream-url="<?= e($video_stream_url) ?>" playsinline controls></video>
+                  <button id="tv-play-btn" class="video-play-overlay" aria-label="Reproducir video">
+                    <i class="bi bi-play-fill"></i>
+                  </button>
+                </div>
+                <div id="tv-status" class="text-secondary small mt-2">En pausa</div>
+              </div>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -137,8 +239,8 @@ $socials = [
 
 <section id="programacion">
   <div class="container">
-    <h2 class="section-title">Programación</h2>
-    <p class="section-subtitle">Nuestra parrilla semanal, día por día.</p>
+    <h2 class="section-title reveal">Programación</h2>
+    <p class="section-subtitle reveal">Nuestra parrilla semanal, día por día.</p>
 
     <ul class="nav nav-pills mb-4 flex-wrap gap-2" id="dayTabs" role="tablist">
       <?php $first = true; foreach ($DAYS_ES as $dayNum => $dayName): ?>
@@ -151,7 +253,7 @@ $socials = [
       <?php $first = false; endforeach; ?>
     </ul>
 
-    <div class="tab-content">
+    <div class="tab-content reveal-trigger schedule-grid">
       <?php $first = true; foreach ($DAYS_ES as $dayNum => $dayName): ?>
         <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="day-<?= $dayNum ?>" role="tabpanel">
           <?php if (!empty($schedule[$dayNum])): ?>
@@ -195,11 +297,11 @@ $socials = [
 <section id="nosotros" class="about-section">
   <div class="container">
     <div class="row align-items-center g-5">
-      <div class="col-lg-6">
+      <div class="col-lg-6 reveal">
         <h2 class="section-title">Nosotros</h2>
         <p class="text-secondary" style="white-space: pre-line;"><?= e($about_text) ?></p>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 reveal">
         <div class="schedule-card">
           <div class="schedule-day">¿Por qué escucharnos?</div>
           <div class="schedule-item"><div class="program"><i class="bi bi-broadcast me-2"></i>Transmisión 24/7</div></div>
@@ -213,10 +315,10 @@ $socials = [
 
 <section id="contacto">
   <div class="container">
-    <h2 class="section-title">Contacto</h2>
-    <p class="section-subtitle">Síguenos en nuestras redes o escríbenos directamente.</p>
+    <h2 class="section-title reveal">Contacto</h2>
+    <p class="section-subtitle reveal">Síguenos en nuestras redes o escríbenos directamente.</p>
     <div class="row g-4">
-      <div class="col-lg-6">
+      <div class="col-lg-6 reveal">
         <div class="contact-card">
           <p><i class="bi bi-telephone me-2"></i><?= e($phone) ?></p>
           <p><i class="bi bi-envelope me-2"></i><?= e($email) ?></p>
@@ -227,9 +329,18 @@ $socials = [
               <i class="bi bi-whatsapp me-1"></i> Escríbenos por WhatsApp
             </a>
           <?php endif; ?>
+          <div class="social-icons mt-3 mb-0">
+            <?php foreach ($socials as $key => $meta): ?>
+              <?php if (!empty($settings[$key])): ?>
+                <a href="<?= e($settings[$key]) ?>" target="_blank" rel="noopener" aria-label="<?= e($meta['label']) ?>">
+                  <i class="bi <?= $meta['icon'] ?>"></i>
+                </a>
+              <?php endif; ?>
+            <?php endforeach; ?>
+          </div>
         </div>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 reveal">
         <?php if ($address): ?>
           <div class="map-embed">
             <iframe
@@ -245,17 +356,8 @@ $socials = [
 </section>
 
 <footer>
-  <div class="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
-    <div>&copy; <?= date('Y') ?> <?= e($site_name) ?>. Todos los derechos reservados.</div>
-    <div class="social-icons mb-0">
-      <?php foreach ($socials as $key => $meta): ?>
-        <?php if (!empty($settings[$key])): ?>
-          <a href="<?= e($settings[$key]) ?>" target="_blank" rel="noopener" aria-label="<?= e($meta['label']) ?>">
-            <i class="bi <?= $meta['icon'] ?>"></i>
-          </a>
-        <?php endif; ?>
-      <?php endforeach; ?>
-    </div>
+  <div class="container text-center">
+    &copy; <?= date('Y') ?> <?= e($site_name) ?>. Todos los derechos reservados.
   </div>
 </footer>
 
@@ -279,6 +381,10 @@ $socials = [
   </a>
 <?php endif; ?>
 
+<button id="back-to-top" class="back-to-top" aria-label="Volver arriba">
+  <i class="bi bi-arrow-up"></i>
+</button>
+
 <script>
   window.VOZSTATION_CONFIG = {
     siteName: <?= json_encode($site_name) ?>,
@@ -286,6 +392,9 @@ $socials = [
     logo: <?= json_encode($logo ?: '') ?>
   };
 </script>
+<?php if ($video_stream_url): ?>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+<?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/main.js?v=<?= filemtime(__DIR__ . '/assets/js/main.js') ?>"></script>
 </body>

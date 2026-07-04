@@ -62,6 +62,12 @@ function get_schedule(): array
     return $grouped;
 }
 
+function get_slides(): array
+{
+    $pdo = get_db();
+    return $pdo->query('SELECT * FROM slides ORDER BY sort_order ASC, id ASC')->fetchAll();
+}
+
 function e(?string $value): string
 {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');

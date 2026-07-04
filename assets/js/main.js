@@ -1,4 +1,27 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Ajusta el espacio superior del body al alto real del navbar fijo, para
+    // que nunca quede un hueco (o un solapamiento) entre el menú y el hero.
+    // Un ResizeObserver detecta también los cambios de alto al hacer scroll
+    // (el navbar se compacta con la clase is-scrolled), no solo el resize de ventana.
+    var navbarEl = document.querySelector('.navbar-vozstation');
+
+    function syncNavbarOffset() {
+        if (navbarEl) {
+            document.body.style.paddingTop = navbarEl.offsetHeight + 'px';
+        }
+    }
+    syncNavbarOffset();
+
+    if (navbarEl && 'ResizeObserver' in window) {
+        new ResizeObserver(syncNavbarOffset).observe(navbarEl);
+    } else {
+        window.addEventListener('resize', syncNavbarOffset);
+    }
+
+    setupCubeSlider();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
     var audio = document.getElementById('radio-audio');
     var playBtn = document.getElementById('play-btn');
     var playIcon = document.getElementById('play-icon');
@@ -65,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var iconClass = playing ? 'bi bi-pause-fill' : 'bi bi-play-fill';
         playIcon.className = iconClass;
         playBtn.setAttribute('aria-label', playing ? 'Pausar' : 'Reproducir');
+        playBtn.classList.toggle('is-playing', playing);
         if (miniPlayIcon) {
             miniPlayIcon.className = iconClass;
         }
@@ -73,6 +97,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         setStatusText(playing ? 'En vivo' : 'En pausa');
         updateMediaSessionState(playing);
+    }
+
+    function setConnectingUI(connecting) {
+        var iconClass = connecting ? 'bi bi-arrow-repeat icon-spin' : (isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill');
+        playIcon.className = iconClass;
+        if (miniPlayIcon) {
+            miniPlayIcon.className = iconClass;
+        }
     }
 
     function clearReconnectTimer() {
@@ -94,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         clearReconnectTimer();
         setStatusText('Reconectando...');
+        setConnectingUI(true);
         reconnectTimer = setTimeout(function () {
             if (!userWantsPlaying) {
                 return;
@@ -117,12 +150,14 @@ document.addEventListener('DOMContentLoaded', function () {
         clearReconnectTimer();
         reconnectDelay = 3000;
         setButtonsDisabled(true);
+        setConnectingUI(true);
 
         startStream()
             .then(function () {
                 setPlayingUI(true);
             })
             .catch(function () {
+                setConnectingUI(false);
                 setStatusText('No se pudo conectar al stream');
             })
             .finally(function () {
@@ -154,6 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
     audio.addEventListener('waiting', function () {
         if (userWantsPlaying) {
             setStatusText('Cargando...');
+            setConnectingUI(true);
         }
     });
 
@@ -229,12 +265,78 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // --- Botones de compartir ---
+    var nativeShareBtn = document.getElementById('native-share-btn');
+    if (nativeShareBtn) {
+        if (navigator.share) {
+            nativeShareBtn.classList.remove('d-none');
+            nativeShareBtn.addEventListener('click', function () {
+                navigator.share({
+                    title: nativeShareBtn.dataset.shareText,
+                    text: nativeShareBtn.dataset.shareText,
+                    url: nativeShareBtn.dataset.shareUrl,
+                }).catch(function () {
+                    // el usuario canceló el diálogo de compartir; no hacer nada
+                });
+            });
+        }
+    }
+
+    var copyLinkBtn = document.getElementById('copy-link-btn');
+    if (copyLinkBtn) {
+        copyLinkBtn.addEventListener('click', function () {
+            var url = copyLinkBtn.dataset.shareUrl;
+
+            function showCopied() {
+                var icon = copyLinkBtn.querySelector('i');
+                var originalClass = icon.className;
+                icon.className = 'bi bi-check-lg';
+                copyLinkBtn.classList.add('is-copied');
+                setTimeout(function () {
+                    icon.className = originalClass;
+                    copyLinkBtn.classList.remove('is-copied');
+                }, 1800);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(showCopied).catch(function () {});
+            } else {
+                var textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopied();
+                } catch (e) {
+                    // copia no soportada; el usuario puede copiar el link manualmente
+                }
+                document.body.removeChild(textarea);
+            }
+        });
+    }
+
+    // --- Link "TV en vivo" del menú: además de ir al hero, activa la pestaña de TV ---
+    var navTvLink = document.getElementById('nav-tv-link');
+    var tvTabBtn = document.getElementById('tv-tab-btn');
+    if (navTvLink && tvTabBtn && window.bootstrap) {
+        navTvLink.addEventListener('click', function () {
+            bootstrap.Tab.getOrCreateInstance(tvTabBtn).show();
+        });
+    }
+
     // --- Mini-reproductor flotante al salir la portada del viewport ---
+    // Solo debe aparecer cuando ya bajaste MÁS ALLÁ del reproductor (quedó
+    // arriba de la pantalla), no simplemente porque todavía no llegaste a él
+    // (por ejemplo, mientras se ve el slider que está antes en la página).
     if (miniPlayer && playerCard && 'IntersectionObserver' in window) {
         var observer = new IntersectionObserver(function (entries) {
-            var show = !entries[0].isIntersecting;
-            miniPlayer.classList.toggle('is-visible', show);
-            document.body.classList.toggle('mini-player-active', show);
+            var entry = entries[0];
+            var scrolledPast = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+            miniPlayer.classList.toggle('is-visible', scrolledPast);
+            document.body.classList.toggle('mini-player-active', scrolledPast);
         }, { threshold: 0 });
         observer.observe(playerCard);
     }
@@ -267,9 +369,12 @@ document.addEventListener('DOMContentLoaded', function () {
         togglePlay();
     });
 
-    // Resalta el link de navegación activo al hacer scroll
+    // Resalta el link de navegación activo, oscurece el navbar y muestra/oculta
+    // el botón "volver arriba" según el scroll.
     var sections = document.querySelectorAll('section[id]');
     var navLinks = document.querySelectorAll('.navbar-vozstation .nav-link');
+    var navbar = document.querySelector('.navbar-vozstation');
+    var backToTop = document.getElementById('back-to-top');
 
     window.addEventListener('scroll', function () {
         var scrollPos = window.scrollY + 120;
@@ -280,7 +385,53 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         });
+
+        if (navbar) {
+            navbar.classList.toggle('is-scrolled', window.scrollY > 40);
+        }
+        if (backToTop) {
+            backToTop.classList.toggle('is-visible', window.scrollY > window.innerHeight * 0.6);
+        }
     });
+
+    if (backToTop) {
+        backToTop.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    // --- Animaciones de entrada al hacer scroll ---
+    var revealItems = document.querySelectorAll('.reveal, .reveal-trigger');
+    var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (revealItems.length) {
+        if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+            revealItems.forEach(function (el) {
+                el.classList.add('is-visible');
+            });
+        } else {
+            var revealObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+            revealItems.forEach(function (el) {
+                revealObserver.observe(el);
+            });
+        }
+    }
+
+    // --- Reproductor de TV en vivo (HLS) ---
+    var tvVideo = document.getElementById('tv-video');
+    var tvPlayBtn = document.getElementById('tv-play-btn');
+    var tvStatus = document.getElementById('tv-status');
+    if (tvVideo && tvPlayBtn) {
+        setupVideoPlayer(tvVideo, tvPlayBtn, tvStatus);
+    }
 });
 
 /**
@@ -369,4 +520,313 @@ function setupVisualizer(canvas) {
             ctx.clearRect(0, 0, rect.width, rect.height);
         },
     };
+}
+
+/**
+ * Reproductor de TV en vivo vía HLS (.m3u8). Usa hls.js cuando está
+ * disponible (Chrome/Firefox/Edge); en navegadores con soporte nativo de HLS
+ * (Safari/iOS) usa el <video> directo. Si el stream se corta, reintenta solo
+ * con backoff, igual que el reproductor de audio.
+ */
+function setupVideoPlayer(video, playBtn, statusEl) {
+    var streamUrl = video.dataset.streamUrl;
+    var playIcon = playBtn.querySelector('i');
+    var hls = null;
+    var userWantsPlaying = false;
+    var reconnectTimer = null;
+    var reconnectDelay = 3000;
+
+    function setStatus(text) {
+        if (statusEl) {
+            statusEl.textContent = text;
+        }
+    }
+
+    function setConnecting(connecting) {
+        if (playIcon) {
+            playIcon.className = connecting ? 'bi bi-arrow-repeat icon-spin' : 'bi bi-play-fill';
+        }
+    }
+
+    function clearReconnectTimer() {
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+    }
+
+    function attachSource() {
+        var freshUrl = streamUrl + (streamUrl.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+
+        if (window.Hls && Hls.isSupported()) {
+            if (hls) {
+                hls.destroy();
+            }
+            hls = new Hls();
+            hls.loadSource(freshUrl);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.ERROR, function (event, data) {
+                if (data && data.fatal && userWantsPlaying) {
+                    scheduleReconnect();
+                }
+            });
+        } else {
+            video.src = freshUrl;
+        }
+    }
+
+    function scheduleReconnect() {
+        if (!userWantsPlaying) {
+            return;
+        }
+        clearReconnectTimer();
+        setStatus('Reconectando...');
+        setConnecting(true);
+        reconnectTimer = setTimeout(function () {
+            if (!userWantsPlaying) {
+                return;
+            }
+            attachSource();
+            video.play().catch(function () {});
+            reconnectDelay = Math.min(reconnectDelay + 2000, 15000);
+        }, reconnectDelay);
+    }
+
+    function play() {
+        userWantsPlaying = true;
+        clearReconnectTimer();
+        reconnectDelay = 3000;
+        setStatus('Conectando...');
+        setConnecting(true);
+        attachSource();
+        video.play()
+            .then(function () {
+                playBtn.classList.add('is-hidden');
+                setStatus('En vivo');
+            })
+            .catch(function () {
+                setConnecting(false);
+                setStatus('No se pudo conectar a la señal de TV');
+            });
+    }
+
+    playBtn.addEventListener('click', play);
+
+    video.addEventListener('playing', function () {
+        userWantsPlaying = true;
+        playBtn.classList.add('is-hidden');
+        setStatus('En vivo');
+    });
+
+    video.addEventListener('pause', function () {
+        userWantsPlaying = false;
+        clearReconnectTimer();
+    });
+
+    video.addEventListener('waiting', function () {
+        if (userWantsPlaying) {
+            setStatus('Cargando...');
+            setConnecting(true);
+        }
+    });
+
+    video.addEventListener('error', function () {
+        if (userWantsPlaying) {
+            scheduleReconnect();
+        }
+    });
+}
+
+/**
+ * Slider principal con transición de cubo 3D. Mantiene 3 caras fijas
+ * (frente, derecha, izquierda) y solo les cambia el contenido; el cubo
+ * "gira" rotando el escenario -90°/90° y al terminar la animación se
+ * resetea a 0° de forma instantánea con el contenido ya actualizado, así
+ * el truco es imperceptible y funciona con cualquier cantidad de slides.
+ */
+function setupCubeSlider() {
+    var slides = window.VOZSTATION_SLIDES || [];
+    var container = document.getElementById('cubeSlider');
+    var stage = document.getElementById('cubeStage');
+    var faceFront = document.getElementById('cubeFaceFront');
+    var faceRight = document.getElementById('cubeFaceRight');
+    var faceLeft = document.getElementById('cubeFaceLeft');
+    var prevBtn = document.getElementById('cubePrevBtn');
+    var nextBtn = document.getElementById('cubeNextBtn');
+    var indicatorsWrap = document.getElementById('cubeIndicators');
+
+    if (!container || !stage || !faceFront || !slides.length) {
+        return;
+    }
+
+    var AUTOPLAY_DELAY = 6000;
+    var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var currentIndex = 0;
+    var isAnimating = false;
+    var autoplayTimer = null;
+    var currentDepth = 300;
+
+    function mod(n, m) {
+        return ((n % m) + m) % m;
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function renderFace(faceEl, slide) {
+        if (!faceEl || !slide) {
+            return;
+        }
+        faceEl.style.backgroundImage = "url('" + slide.image + "')";
+        if (slide.title || slide.subtitle) {
+            var html = '<div class="main-slider-caption">';
+            if (slide.title) {
+                html += '<h2>' + escapeHtml(slide.title) + '</h2>';
+            }
+            if (slide.subtitle) {
+                html += '<p>' + escapeHtml(slide.subtitle) + '</p>';
+            }
+            if (slide.link) {
+                html += '<a href="' + escapeHtml(slide.link) + '" class="btn btn-lg btn-accent" target="_blank" rel="noopener">Ver más</a>';
+            }
+            html += '</div>';
+            faceEl.innerHTML = html;
+        } else {
+            faceEl.innerHTML = '';
+        }
+    }
+
+    function updateIndicators() {
+        if (!indicatorsWrap) {
+            return;
+        }
+        indicatorsWrap.querySelectorAll('button').forEach(function (btn, i) {
+            btn.classList.toggle('active', i === currentIndex);
+        });
+    }
+
+    function renderNeighbors() {
+        renderFace(faceFront, slides[currentIndex]);
+        renderFace(faceRight, slides[mod(currentIndex + 1, slides.length)]);
+        renderFace(faceLeft, slides[mod(currentIndex - 1, slides.length)]);
+    }
+
+    function baseTransform() {
+        return 'translateZ(-' + currentDepth + 'px)';
+    }
+
+    function resetStage() {
+        stage.classList.add('no-transition');
+        stage.style.transform = baseTransform() + ' rotateY(0deg)';
+        void stage.offsetHeight; // fuerza reflow para que la próxima animación sí transicione
+        stage.classList.remove('no-transition');
+    }
+
+    function step(direction) {
+        if (isAnimating || slides.length < 2) {
+            return;
+        }
+
+        currentIndex = mod(currentIndex + direction, slides.length);
+
+        if (reducedMotion) {
+            renderNeighbors();
+            updateIndicators();
+            return;
+        }
+
+        isAnimating = true;
+        stage.style.transform = baseTransform() + ' rotateY(' + (direction > 0 ? -90 : 90) + 'deg)';
+
+        var onEnd = function (e) {
+            if (e.target !== stage) {
+                return;
+            }
+            stage.removeEventListener('transitionend', onEnd);
+            renderNeighbors();
+            resetStage();
+            updateIndicators();
+            isAnimating = false;
+        };
+        stage.addEventListener('transitionend', onEnd);
+    }
+
+    function goTo(targetIndex) {
+        if (isAnimating || targetIndex === currentIndex || targetIndex < 0 || targetIndex >= slides.length) {
+            return;
+        }
+        var forward = mod(targetIndex - currentIndex, slides.length);
+        var backward = mod(currentIndex - targetIndex, slides.length);
+        var direction = forward <= backward ? 1 : -1;
+        var stepsLeft = Math.min(forward, backward);
+
+        (function runStep() {
+            if (stepsLeft <= 0) {
+                return;
+            }
+            stepsLeft--;
+            step(direction);
+            var waitForIt = setInterval(function () {
+                if (!isAnimating) {
+                    clearInterval(waitForIt);
+                    runStep();
+                }
+            }, 80);
+        })();
+    }
+
+    function resetAutoplay() {
+        if (autoplayTimer) {
+            clearInterval(autoplayTimer);
+        }
+        if (slides.length > 1) {
+            autoplayTimer = setInterval(function () {
+                step(1);
+            }, AUTOPLAY_DELAY);
+        }
+    }
+
+    function syncDepth() {
+        currentDepth = container.getBoundingClientRect().width / 2;
+        container.style.setProperty('--cube-depth', currentDepth + 'px');
+        if (!isAnimating) {
+            resetStage();
+        }
+    }
+
+    renderNeighbors();
+    updateIndicators();
+    syncDepth();
+
+    if ('ResizeObserver' in window) {
+        new ResizeObserver(syncDepth).observe(container);
+    } else {
+        window.addEventListener('resize', syncDepth);
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+            step(1);
+            resetAutoplay();
+        });
+    }
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function () {
+            step(-1);
+            resetAutoplay();
+        });
+    }
+    if (indicatorsWrap) {
+        indicatorsWrap.querySelectorAll('button').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                goTo(parseInt(btn.dataset.index, 10));
+                resetAutoplay();
+            });
+        });
+    }
+
+    resetAutoplay();
 }

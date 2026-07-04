@@ -23,6 +23,9 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
       <a href="index.php" class="<?= $current_page === 'index.php' ? 'active' : '' ?>">
         <i class="bi bi-sliders me-2"></i>Configuración
       </a>
+      <a href="slides.php" class="<?= $current_page === 'slides.php' ? 'active' : '' ?>">
+        <i class="bi bi-images me-2"></i>Slider principal
+      </a>
       <a href="schedule.php" class="<?= $current_page === 'schedule.php' ? 'active' : '' ?>">
         <i class="bi bi-calendar-week me-2"></i>Programación
       </a>
