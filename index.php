@@ -26,6 +26,12 @@ $share_url  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https
 $share_text = $site_name . ($tagline ? ' - ' . $tagline : '');
 $secondary_color = get_setting('secondary_color', '#1e6fe8');
 
+$tickets_enabled  = get_setting('tickets_enabled') === '1';
+$tickets_event    = get_setting('tickets_event_name');
+$tickets_date     = get_setting('tickets_event_date');
+$tickets_price    = (float) get_setting('tickets_price', '0');
+$tickets_showcase = $tickets_enabled && $tickets_event;
+
 $socials = [
     'facebook'  => ['icon' => 'bi-facebook', 'label' => 'Facebook'],
     'instagram' => ['icon' => 'bi-instagram', 'label' => 'Instagram'],
@@ -75,6 +81,9 @@ $socials = [
         <li class="nav-item"><a class="nav-link" href="#programacion">Programación</a></li>
         <?php if ($video_stream_url): ?>
           <li class="nav-item"><a class="nav-link" href="#inicio" id="nav-tv-link">TV en vivo</a></li>
+        <?php endif; ?>
+        <?php if ($tickets_showcase): ?>
+          <li class="nav-item"><a class="nav-link" href="tickets.php">Entradas</a></li>
         <?php endif; ?>
         <li class="nav-item"><a class="nav-link" href="#nosotros">Nosotros</a></li>
         <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
@@ -293,6 +302,26 @@ $socials = [
     </div>
   </div>
 </section>
+
+<?php if ($tickets_showcase): ?>
+<section class="ad-banner">
+  <div class="container d-flex flex-column flex-lg-row align-items-center justify-content-between gap-4 reveal">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-ticket-perforated-fill ad-banner-icon"></i>
+      <div>
+        <h3 class="ad-banner-title mb-1"><?= e($tickets_event) ?></h3>
+        <p class="mb-0">
+          <?php if ($tickets_date): ?><?= e($tickets_date) ?><?php endif; ?>
+          <?php if ($tickets_price > 0): ?> &middot; $<?= number_format($tickets_price, 2) ?> por entrada<?php endif; ?>
+        </p>
+      </div>
+    </div>
+    <a href="tickets.php" class="btn btn-lg ad-banner-btn">
+      <i class="bi bi-ticket-perforated me-1"></i> Comprar entradas
+    </a>
+  </div>
+</section>
+<?php endif; ?>
 
 <section id="nosotros" class="about-section">
   <div class="container">

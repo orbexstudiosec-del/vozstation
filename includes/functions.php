@@ -90,32 +90,54 @@ function format_time(string $time): string
 }
 
 /**
- * Valida y mueve un archivo subido a assets/img/uploads.
- * Devuelve ['path' => string|null, 'error' => string|null].
+ * Valida y mueve un archivo subido. Devuelve ['path' => string|null, 'error' => string|null].
+ * $uploadDir es relativo a la raíz del sitio (ej. 'assets/img/uploads/').
  */
-function handle_image_upload(string $fieldName, string $prefix, int $maxBytes = 3 * 1024 * 1024): array
-{
+function handle_file_upload(
+    string $fieldName,
+    string $prefix,
+    array $allowedExts,
+    string $uploadDir,
+    int $maxBytes,
+    string $typeLabel = 'archivo'
+): array {
     if (empty($_FILES[$fieldName]['name']) || $_FILES[$fieldName]['error'] !== UPLOAD_ERR_OK) {
         return ['path' => null, 'error' => null];
     }
 
-    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
     $ext = strtolower(pathinfo($_FILES[$fieldName]['name'], PATHINFO_EXTENSION));
 
-    if (!in_array($ext, $allowed, true)) {
-        return ['path' => null, 'error' => 'Formato no permitido. Usa JPG, PNG, WEBP o SVG.'];
+    if (!in_array($ext, $allowedExts, true)) {
+        return ['path' => null, 'error' => 'Formato no permitido. Usa: ' . strtoupper(implode(', ', $allowedExts)) . '.'];
     }
 
     if ($_FILES[$fieldName]['size'] > $maxBytes) {
-        return ['path' => null, 'error' => 'La imagen no debe superar ' . round($maxBytes / 1024 / 1024) . 'MB.'];
+        return ['path' => null, 'error' => 'El ' . $typeLabel . ' no debe superar ' . round($maxBytes / 1024 / 1024) . 'MB.'];
     }
 
-    $uploadDir = __DIR__ . '/../assets/img/uploads/';
+    $absoluteDir = __DIR__ . '/../' . $uploadDir;
     $filename = $prefix . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
 
-    if (!move_uploaded_file($_FILES[$fieldName]['tmp_name'], $uploadDir . $filename)) {
-        return ['path' => null, 'error' => 'No se pudo subir la imagen. Verifica permisos de assets/img/uploads.'];
+    if (!move_uploaded_file($_FILES[$fieldName]['tmp_name'], $absoluteDir . $filename)) {
+        return ['path' => null, 'error' => 'No se pudo subir el ' . $typeLabel . '. Verifica permisos de ' . $uploadDir . '.'];
     }
 
-    return ['path' => 'assets/img/uploads/' . $filename, 'error' => null];
+    return ['path' => $uploadDir . $filename, 'error' => null];
+}
+
+function handle_image_upload(string $fieldName, string $prefix, int $maxBytes = 3 * 1024 * 1024): array
+{
+    return handle_file_upload(
+        $fieldName,
+        $prefix,
+        ['jpg', 'jpeg', 'png', 'webp', 'svg'],
+        'assets/img/uploads/',
+        $maxBytes,
+        'imagen'
+    );
+}
+
+function generate_ticket_code(): string
+{
+    return 'VOZ-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
 }

@@ -4,6 +4,13 @@ require_login();
 require_once __DIR__ . '/../../includes/functions.php';
 
 $current_page = basename($_SERVER['SCRIPT_NAME']);
+
+$pendingTickets = 0;
+try {
+    $pendingTickets = (int) get_db()->query("SELECT COUNT(*) FROM tickets WHERE status = 'pendiente'")->fetchColumn();
+} catch (PDOException $e) {
+    // tabla tickets aún no existe (base de datos sin actualizar); se ignora
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -28,6 +35,12 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
       </a>
       <a href="schedule.php" class="<?= $current_page === 'schedule.php' ? 'active' : '' ?>">
         <i class="bi bi-calendar-week me-2"></i>Programación
+      </a>
+      <a href="tickets.php" class="<?= $current_page === 'tickets.php' ? 'active' : '' ?>">
+        <i class="bi bi-ticket-perforated me-2"></i>Tickets
+        <?php if ($pendingTickets > 0): ?>
+          <span class="badge bg-danger ms-1"><?= $pendingTickets ?></span>
+        <?php endif; ?>
       </a>
       <a href="password.php" class="<?= $current_page === 'password.php' ? 'active' : '' ?>">
         <i class="bi bi-key me-2"></i>Cambiar contraseña

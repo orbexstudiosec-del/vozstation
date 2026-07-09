@@ -33,6 +33,21 @@ CREATE TABLE slides (
   sort_order INTEGER DEFAULT 0
 );
 
+CREATE TABLE tickets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code VARCHAR(20) NOT NULL UNIQUE,
+  buyer_name VARCHAR(150) NOT NULL,
+  buyer_email VARCHAR(150),
+  buyer_phone VARCHAR(50) NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  payment_proof VARCHAR(255) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at TIMESTAMP
+);
+
 -- Usuario: admin | Contraseña: changeme123
 INSERT INTO admins (username, password) VALUES
 ('admin', '$2y$10$THFVBXTGMTadIjKC8qORpu4lrlLRKC0ZFKUu8PDCCZRUuosubQQ7a');
@@ -57,7 +72,13 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('youtube', ''),
 ('tiktok', 'https://www.tiktok.com/@voz.station.radio?_r=1&_t=ZS-97iNoXSvZJ9'),
 ('primary_color', '#e50914'),
-('secondary_color', '#1e6fe8');
+('secondary_color', '#1e6fe8'),
+('tickets_enabled', ''),
+('tickets_event_name', ''),
+('tickets_event_date', ''),
+('tickets_price', '0'),
+('tickets_description', ''),
+('tickets_event_image', '');
 
 INSERT INTO schedule (day_of_week, start_time, end_time, program_name, host_name, sort_order) VALUES
 (1, '06:00:00', '09:00:00', 'Despertar VozStation', 'DJ Ana Torres', 1),

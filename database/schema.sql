@@ -34,6 +34,21 @@ CREATE TABLE IF NOT EXISTS `slides` (
   `sort_order` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `tickets` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `code` VARCHAR(20) NOT NULL UNIQUE,
+  `buyer_name` VARCHAR(150) NOT NULL,
+  `buyer_email` VARCHAR(150) DEFAULT NULL,
+  `buyer_phone` VARCHAR(50) NOT NULL,
+  `quantity` INT NOT NULL DEFAULT 1,
+  `unit_price` DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `total_price` DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `payment_proof` VARCHAR(255) NOT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `reviewed_at` TIMESTAMP NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Usuario administrador por defecto
 -- Usuario: admin | Contraseña: changeme123
 -- IMPORTANTE: cambia esta contraseña apenas ingreses al panel
@@ -61,7 +76,13 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('youtube', ''),
 ('tiktok', 'https://www.tiktok.com/@voz.station.radio?_r=1&_t=ZS-97iNoXSvZJ9'),
 ('primary_color', '#e50914'),
-('secondary_color', '#1e6fe8');
+('secondary_color', '#1e6fe8'),
+('tickets_enabled', ''),
+('tickets_event_name', ''),
+('tickets_event_date', ''),
+('tickets_price', '0'),
+('tickets_description', ''),
+('tickets_event_image', '');
 
 -- Programación de ejemplo
 INSERT INTO `schedule` (`day_of_week`, `start_time`, `end_time`, `program_name`, `host_name`, `sort_order`) VALUES

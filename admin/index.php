@@ -14,12 +14,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'stream_url', 'stream_format', 'video_stream_url', 'ad_banner_text',
         'phone', 'whatsapp', 'email', 'address',
         'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'primary_color', 'secondary_color',
+        'tickets_event_name', 'tickets_event_date', 'tickets_price', 'tickets_description',
     ];
 
     foreach ($fields as $field) {
         $value = trim($_POST[$field] ?? '');
         save_setting($field, $value);
     }
+
+    save_setting('tickets_enabled', !empty($_POST['tickets_enabled']) ? '1' : '');
 
     // Manejo de subida de logo (opcional)
     $logoUpload = handle_image_upload('logo', 'logo', 2 * 1024 * 1024);
@@ -41,6 +44,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($_POST['remove_hero_image'])) {
         save_setting('hero_image', '');
+    }
+
+    // Manejo de subida de imagen/poster del evento de tickets (opcional)
+    if (!$error) {
+        $eventImageUpload = handle_image_upload('tickets_event_image', 'event', 4 * 1024 * 1024);
+        if ($eventImageUpload['error']) {
+            $error = $eventImageUpload['error'];
+        } elseif ($eventImageUpload['path']) {
+            save_setting('tickets_event_image', $eventImageUpload['path']);
+        }
+    }
+
+    if (!empty($_POST['remove_event_image'])) {
+        save_setting('tickets_event_image', '');
     }
 
     if (!$error) {
@@ -172,6 +189,55 @@ function v(string $key): string
     <label class="form-label">Texto del banner</label>
     <textarea name="ad_banner_text" class="form-control" rows="2"><?= v('ad_banner_text') ?></textarea>
     <div class="form-text">Aparece como una franja destacada en la portada. El botón del banner usa tu número de WhatsApp de la sección de Contacto.</div>
+  </div>
+
+  <div class="admin-card">
+    <h2 class="h5 mb-3">Venta de entradas</h2>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" name="tickets_enabled" value="1" id="ticketsEnabled"
+             <?= get_setting('tickets_enabled') === '1' ? 'checked' : '' ?>>
+      <label class="form-check-label" for="ticketsEnabled">Venta de entradas activa</label>
+      <div class="form-text">Si está desmarcado, la página de compra de entradas muestra "sin venta activa" y no aparece el aviso en el sitio.</div>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Nombre del evento</label>
+        <input type="text" name="tickets_event_name" class="form-control" value="<?= v('tickets_event_name') ?>"
+               placeholder="Ej: Gran Concierto VozStation">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Fecha / lugar (texto libre)</label>
+        <input type="text" name="tickets_event_date" class="form-control" value="<?= v('tickets_event_date') ?>"
+               placeholder="Ej: Sábado 15 de agosto, 8:00 PM - Coliseo">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Precio por entrada (USD)</label>
+        <input type="number" step="0.01" min="0" name="tickets_price" class="form-control" value="<?= v('tickets_price') ?: '0' ?>">
+        <div class="form-text">Pon 0 si la entrada es gratuita (igual se pide comprobante si aplica).</div>
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Descripción del evento</label>
+        <textarea name="tickets_description" class="form-control" rows="2"><?= v('tickets_description') ?></textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Imagen / póster del evento (opcional)</label>
+        <input type="file" name="tickets_event_image" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+        <div class="form-text">Recomendado: vertical, tipo póster (ej. 800×1000px).</div>
+      </div>
+      <?php if (!empty($settings['tickets_event_image'])): ?>
+        <div class="col-md-6">
+          <label class="form-label">Imagen actual</label>
+          <div><img src="../<?= e($settings['tickets_event_image']) ?>" class="logo-preview mt-2" alt="Póster actual" style="max-height:100px;"></div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" name="remove_event_image" value="1" id="removeEventImage">
+            <label class="form-check-label small" for="removeEventImage">Quitar imagen</label>
+          </div>
+        </div>
+      <?php endif; ?>
+    </div>
+    <a href="tickets.php" target="_blank" class="btn btn-outline-secondary btn-sm mt-3">
+      <i class="bi bi-box-arrow-up-right me-1"></i>Ver revisión de solicitudes
+    </a>
   </div>
 
   <div class="admin-card">
