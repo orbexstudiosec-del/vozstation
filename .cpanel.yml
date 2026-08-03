@@ -1,0 +1,14 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/vozseudc/public_html/
+    - /bin/cp -R admin $DEPLOYPATH
+    - /bin/cp -R assets $DEPLOYPATH
+    - /bin/cp -R database $DEPLOYPATH
+    - /bin/mkdir -p $DEPLOYPATH/includes
+    - /bin/cp includes/.htaccess $DEPLOYPATH/includes/
+    - /bin/cp includes/db.php $DEPLOYPATH/includes/
+    - /bin/cp includes/functions.php $DEPLOYPATH/includes/
+    - /bin/cp includes/config.example.php $DEPLOYPATH/includes/
+    - /bin/cp index.php $DEPLOYPATH
+    - /bin/cp tickets.php $DEPLOYPATH
