@@ -205,6 +205,9 @@ $socials = [
                 </button>
                 <input type="range" class="form-range" id="volume-slider" min="0" max="1" step="0.05" value="0.8">
               </div>
+              <button type="button" id="unmute-hint" class="unmute-hint">
+                <i class="bi bi-volume-mute-fill me-1"></i> Sonando sin audio — clic para activar el sonido
+              </button>
               <div class="share-row d-flex align-items-center gap-2 mt-3">
                 <span class="share-label">Compartir</span>
                 <button id="native-share-btn" class="share-btn d-none" aria-label="Compartir"

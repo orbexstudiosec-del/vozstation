@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var miniPlayBtn = document.getElementById('mini-play-btn');
     var miniPlayIcon = document.getElementById('mini-play-icon');
     var miniStatusLabel = document.getElementById('mini-player-status');
+    var unmuteHint = document.getElementById('unmute-hint');
+    var autoplayForcedMute = false;
 
     var config = window.VOZSTATION_CONFIG || {};
 
@@ -171,6 +173,9 @@ document.addEventListener('DOMContentLoaded', function () {
         reconnectDelay = 3000;
         audio.pause();
         setPlayingUI(false);
+        if (autoplayForcedMute) {
+            hideUnmuteHint();
+        }
     }
 
     function togglePlay() {
@@ -247,6 +252,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     updateMuteIcon();
 
+    function hideUnmuteHint() {
+        autoplayForcedMute = false;
+        if (unmuteHint) {
+            unmuteHint.classList.remove('is-visible');
+        }
+    }
+
     if (volumeSlider) {
         volumeSlider.addEventListener('input', function () {
             audio.volume = parseFloat(volumeSlider.value);
@@ -254,6 +266,7 @@ document.addEventListener('DOMContentLoaded', function () {
             storageSet(STORAGE_VOLUME_KEY, String(audio.volume));
             storageSet(STORAGE_MUTED_KEY, '0');
             updateMuteIcon();
+            hideUnmuteHint();
         });
     }
 
@@ -262,15 +275,28 @@ document.addEventListener('DOMContentLoaded', function () {
             audio.muted = !audio.muted;
             storageSet(STORAGE_MUTED_KEY, audio.muted ? '1' : '0');
             updateMuteIcon();
+            hideUnmuteHint();
+        });
+    }
+
+    if (unmuteHint) {
+        unmuteHint.addEventListener('click', function () {
+            audio.muted = false;
+            storageSet(STORAGE_MUTED_KEY, '0');
+            updateMuteIcon();
+            hideUnmuteHint();
         });
     }
 
     // --- Autoplay al entrar al sitio ---
-    // La mayoría de navegadores bloquean el autoplay con sonido si el usuario
-    // no interactuó antes con el sitio (política estándar anti-molestias). Por
-    // eso esto es un intento silencioso: si el navegador lo permite, arranca
-    // solo; si lo bloquea, no pasa nada raro, el usuario simplemente ve el
-    // botón de play normal y lo activa con un clic.
+    // Los navegadores casi siempre bloquean el autoplay CON sonido si el
+    // usuario no interactuó antes con el sitio (política estándar
+    // anti-molestias), pero el autoplay SILENCIADO sí se permite casi
+    // siempre. Por eso: 1) probamos con sonido primero (a veces funciona,
+    // ej. visitas repetidas); 2) si lo bloquea, probamos silenciado (esto
+    // casi nunca falla); 3) si logramos arrancar silenciado, mostramos un
+    // aviso para que el usuario active el sonido con un clic. Si hasta el
+    // autoplay silenciado se bloquea, se deja en pausa normal sin más vueltas.
     audio.src = audio.dataset.streamUrl + '?t=' + Date.now();
     audio.play()
         .then(function () {
@@ -278,7 +304,26 @@ document.addEventListener('DOMContentLoaded', function () {
             setPlayingUI(true);
         })
         .catch(function () {
-            // autoplay bloqueado por el navegador; se deja en pausa normal
+            if (audio.muted) {
+                // el usuario ya lo tenía silenciado por su cuenta; no hace falta el truco
+                return;
+            }
+            autoplayForcedMute = true;
+            audio.muted = true;
+            audio.play()
+                .then(function () {
+                    userWantsPlaying = true;
+                    setPlayingUI(true);
+                    updateMuteIcon();
+                    if (unmuteHint) {
+                        unmuteHint.classList.add('is-visible');
+                    }
+                })
+                .catch(function () {
+                    autoplayForcedMute = false;
+                    audio.muted = false;
+                    // autoplay bloqueado por completo; se deja en pausa normal
+                });
         });
 
     // --- Botones de compartir ---

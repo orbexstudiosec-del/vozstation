@@ -545,6 +545,37 @@ a {
     color: #fff;
 }
 
+.unmute-hint {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.unmute-hint.is-visible {
+    display: flex;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .unmute-hint.is-visible {
+        animation: unmute-hint-pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes unmute-hint-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+        50% { box-shadow: 0 0 0 8px transparent; }
+    }
+}
+
 .share-row {
     flex-wrap: wrap;
 }
