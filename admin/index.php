@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fields = [
         'site_name', 'tagline', 'description', 'about_text',
         'stream_url', 'stream_format', 'video_stream_url', 'ad_banner_text',
-        'phone', 'whatsapp', 'email', 'address',
+        'phone', 'whatsapp', 'email', 'address', 'map_coordinates',
         'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'primary_color', 'secondary_color',
         'tickets_event_name', 'tickets_event_date', 'tickets_price', 'tickets_description',
     ];
@@ -258,6 +258,15 @@ function v(string $key): string
       <div class="col-12">
         <label class="form-label">Dirección</label>
         <input type="text" name="address" class="form-control" value="<?= v('address') ?>">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Coordenadas exactas del mapa (opcional)</label>
+        <input type="text" name="map_coordinates" class="form-control" value="<?= v('map_coordinates') ?>"
+               placeholder="Ej: -2.869132,-78.9826157">
+        <div class="form-text">
+          Si las llenas, el mapa de Contacto usa este punto exacto en vez de buscar la dirección de texto.
+          Para conseguirlas: abre Google Maps, clic derecho en tu ubicación exacta y copia las coordenadas que aparecen arriba.
+        </div>
       </div>
     </div>
   </div>

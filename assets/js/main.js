@@ -265,6 +265,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // --- Autoplay al entrar al sitio ---
+    // La mayoría de navegadores bloquean el autoplay con sonido si el usuario
+    // no interactuó antes con el sitio (política estándar anti-molestias). Por
+    // eso esto es un intento silencioso: si el navegador lo permite, arranca
+    // solo; si lo bloquea, no pasa nada raro, el usuario simplemente ve el
+    // botón de play normal y lo activa con un clic.
+    audio.src = audio.dataset.streamUrl + '?t=' + Date.now();
+    audio.play()
+        .then(function () {
+            userWantsPlaying = true;
+            setPlayingUI(true);
+        })
+        .catch(function () {
+            // autoplay bloqueado por el navegador; se deja en pausa normal
+        });
+
     // --- Botones de compartir ---
     var nativeShareBtn = document.getElementById('native-share-btn');
     if (nativeShareBtn) {

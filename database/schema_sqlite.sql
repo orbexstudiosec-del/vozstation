@@ -66,6 +66,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('whatsapp', '593982611896'),
 ('email', 'contacto@vozstation.com'),
 ('address', 'Calle Cutuchi y Vía Patamarca Uncovía, Cuenca, Ecuador'),
+('map_coordinates', ''),
 ('facebook', 'https://www.facebook.com/share/1JcATyGafz/'),
 ('instagram', 'https://www.instagram.com/vozstation?igsh=MWx2aGR6YXlieHk2NQ=='),
 ('twitter', ''),

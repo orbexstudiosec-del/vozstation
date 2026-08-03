@@ -20,6 +20,8 @@ $phone       = get_setting('phone');
 $whatsapp    = get_setting('whatsapp');
 $email       = get_setting('email');
 $address     = get_setting('address');
+$map_coordinates = get_setting('map_coordinates');
+$map_query   = $map_coordinates ?: $address;
 $primary_color   = get_setting('primary_color', '#e50914');
 $share_url  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
             . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/';
@@ -64,6 +66,7 @@ $socials = [
         <span class="brand-logo-chip">
           <img src="<?= e($logo) ?>" alt="<?= e($site_name) ?>">
         </span>
+        <span class="brand-badge d-none d-lg-inline-block ms-2">Radio Online</span>
       <?php else: ?>
         <i class="bi bi-mic-fill brand-mic-icon"></i>
         <span class="brand-wordmark">
@@ -370,10 +373,10 @@ $socials = [
         </div>
       </div>
       <div class="col-lg-6 reveal">
-        <?php if ($address): ?>
+        <?php if ($map_query): ?>
           <div class="map-embed">
             <iframe
-              src="https://www.google.com/maps?q=<?= urlencode($address) ?>&output=embed"
+              src="https://www.google.com/maps?q=<?= urlencode($map_query) ?>&z=17&hl=es&output=embed"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
               allowfullscreen></iframe>
