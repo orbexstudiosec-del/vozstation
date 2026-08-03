@@ -89,6 +89,15 @@ function format_time(string $time): string
     return date('g:i A', strtotime($time));
 }
 
+function spaced_site_name(string $siteName): string
+{
+    if (stripos($siteName, 'voz') === 0) {
+        return substr($siteName, 0, 3) . ' ' . substr($siteName, 3);
+    }
+
+    return $siteName;
+}
+
 /**
  * Valida y mueve un archivo subido. Devuelve ['path' => string|null, 'error' => string|null].
  * $uploadDir es relativo a la raíz del sitio (ej. 'assets/img/uploads/').

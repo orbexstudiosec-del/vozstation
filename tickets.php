@@ -117,7 +117,7 @@ if ($ticketsEnabled && $eventName && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <a class="navbar-brand d-flex align-items-center" href="index.php">
       <?php if ($logo): ?>
         <span class="brand-logo-chip"><img src="<?= e($logo) ?>" alt="<?= e($site_name) ?>"></span>
-        <span class="brand-badge d-none d-lg-inline-block ms-2"><?= e($site_name) ?> Radio Online</span>
+        <span class="brand-badge d-none d-lg-inline-block ms-2"><?= e(spaced_site_name($site_name)) ?> Radio Online</span>
       <?php else: ?>
         <i class="bi bi-mic-fill brand-mic-icon"></i>
         <span class="brand-wordmark">
