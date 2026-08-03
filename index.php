@@ -420,6 +420,18 @@ $socials = [
   <i class="bi bi-arrow-up"></i>
 </button>
 
+<div id="autoplay-popup" class="autoplay-popup">
+  <div class="autoplay-popup-card">
+    <i class="bi bi-music-note-beamed autoplay-popup-icon"></i>
+    <h3 class="h5 mb-2">¿Escuchamos en vivo?</h3>
+    <p class="text-secondary small mb-3">Dale play para sintonizar <?= e($site_name) ?> ahora mismo.</p>
+    <button type="button" id="autoplay-popup-play" class="btn btn-accent btn-lg w-100">
+      <i class="bi bi-play-fill me-1"></i> Reproducir música
+    </button>
+    <button type="button" id="autoplay-popup-dismiss" class="btn btn-link btn-sm mt-2 text-secondary">Ahora no</button>
+  </div>
+</div>
+
 <script>
   window.VOZSTATION_CONFIG = {
     siteName: <?= json_encode($site_name) ?>,

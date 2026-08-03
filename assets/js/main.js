@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var miniStatusLabel = document.getElementById('mini-player-status');
     var unmuteHint = document.getElementById('unmute-hint');
     var autoplayForcedMute = false;
+    var autoplayPopup = document.getElementById('autoplay-popup');
+    var autoplayPopupPlayBtn = document.getElementById('autoplay-popup-play');
+    var autoplayPopupDismissBtn = document.getElementById('autoplay-popup-dismiss');
 
     var config = window.VOZSTATION_CONFIG || {};
 
@@ -191,6 +194,29 @@ document.addEventListener('DOMContentLoaded', function () {
         miniPlayBtn.addEventListener('click', togglePlay);
     }
 
+    function hideAutoplayPopup() {
+        if (autoplayPopup) {
+            autoplayPopup.classList.remove('is-visible');
+        }
+    }
+
+    if (autoplayPopupPlayBtn) {
+        autoplayPopupPlayBtn.addEventListener('click', function () {
+            hideAutoplayPopup();
+            play();
+        });
+    }
+    if (autoplayPopupDismissBtn) {
+        autoplayPopupDismissBtn.addEventListener('click', hideAutoplayPopup);
+    }
+    if (autoplayPopup) {
+        autoplayPopup.addEventListener('click', function (e) {
+            if (e.target === autoplayPopup) {
+                hideAutoplayPopup();
+            }
+        });
+    }
+
     audio.addEventListener('waiting', function () {
         if (userWantsPlaying) {
             setStatusText('Cargando...');
@@ -322,7 +348,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(function () {
                     autoplayForcedMute = false;
                     audio.muted = false;
-                    // autoplay bloqueado por completo; se deja en pausa normal
+                    // ni siquiera el autoplay silenciado se permitió: mostramos
+                    // un popup invitando a darle play a mano
+                    if (autoplayPopup) {
+                        autoplayPopup.classList.add('is-visible');
+                    }
                 });
         });
 
