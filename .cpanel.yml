@@ -5,10 +5,11 @@ deployment:
     - /bin/cp -R admin $DEPLOYPATH
     - /bin/cp -R assets $DEPLOYPATH
     - /bin/cp -R database $DEPLOYPATH
-    - /bin/mkdir -p $DEPLOYPATH/includes
-    - /bin/cp includes/.htaccess $DEPLOYPATH/includes/
-    - /bin/cp includes/db.php $DEPLOYPATH/includes/
-    - /bin/cp includes/functions.php $DEPLOYPATH/includes/
-    - /bin/cp includes/config.example.php $DEPLOYPATH/includes/
+    # Copia TODO includes/ de una vez (no archivo por archivo) para que un
+    # archivo nuevo nunca se quede sin desplegar por olvido. Es seguro:
+    # config.php y config.local.php están en .gitignore, así que jamás
+    # existen en este repositorio clonado - cp no puede pisar lo que no
+    # tiene como origen, así que el config.php real del servidor queda intacto.
+    - /bin/cp -R includes $DEPLOYPATH
     - /bin/cp index.php $DEPLOYPATH
     - /bin/cp tickets.php $DEPLOYPATH
