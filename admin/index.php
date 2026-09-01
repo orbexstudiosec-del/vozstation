@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'phone', 'whatsapp', 'email', 'address', 'map_coordinates',
         'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'primary_color', 'secondary_color',
         'tickets_event_name', 'tickets_event_date', 'tickets_price', 'tickets_description',
+        'site_locked_message',
     ];
 
     foreach ($fields as $field) {
@@ -23,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     save_setting('tickets_enabled', !empty($_POST['tickets_enabled']) ? '1' : '');
+    save_setting('site_locked', !empty($_POST['site_locked']) ? '1' : '');
 
     // Manejo de subida de logo (opcional)
     $logoUpload = handle_image_upload('logo', 'logo', 2 * 1024 * 1024);
@@ -295,6 +297,23 @@ function v(string $key): string
         <input type="url" name="tiktok" class="form-control" value="<?= v('tiktok') ?>">
       </div>
     </div>
+  </div>
+
+  <div class="admin-card border border-danger">
+    <h2 class="h5 mb-3 text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Bloqueo del sitio</h2>
+    <p class="text-muted small">
+      Si lo activas, el sitio público (portada y entradas) deja de mostrarse por completo y en su lugar
+      aparece solo el mensaje de abajo, sin menú ni forma de navegar. <strong>El panel admin nunca se bloquea</strong>,
+      así que siempre vas a poder volver a desactivarlo desde aquí.
+    </p>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" name="site_locked" value="1" id="siteLocked"
+             <?= get_setting('site_locked') === '1' ? 'checked' : '' ?>
+             onchange="if (this.checked) { this.checked = confirm('Esto va a ocultar TODO el sitio público de inmediato. ¿Confirmas?'); }">
+      <label class="form-check-label fw-bold" for="siteLocked">Sitio bloqueado (deshabilitado por falta de pago)</label>
+    </div>
+    <label class="form-label">Mensaje que se muestra</label>
+    <textarea name="site_locked_message" class="form-control" rows="2"><?= v('site_locked_message') ?: 'Sitio deshabilitado por falta de pago.' ?></textarea>
   </div>
 
   <button type="submit" class="btn btn-danger px-4">Guardar cambios</button>

@@ -83,7 +83,9 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 ('tickets_event_date', ''),
 ('tickets_price', '0'),
 ('tickets_description', ''),
-('tickets_event_image', '');
+('tickets_event_image', ''),
+('site_locked', ''),
+('site_locked_message', 'Sitio deshabilitado por falta de pago.');
 
 -- Programación de ejemplo
 INSERT INTO `schedule` (`day_of_week`, `start_time`, `end_time`, `program_name`, `host_name`, `sort_order`) VALUES
