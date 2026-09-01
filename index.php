@@ -153,6 +153,7 @@ $socials = [
       <div class="col-lg-6">
         <span class="live-badge mb-3"><span class="live-dot"></span> ESCÚCHANOS EN VIVO 24/7</span>
         <h1 class="mt-3 hero-fade-2"><?= e($site_name) ?></h1>
+        <span class="brand-badge d-inline-block hero-fade-2 mb-2">Radio Online</span>
         <p class="tagline hero-fade-3"><?= e($tagline) ?></p>
         <p class="text-secondary hero-fade-3"><?= e($description) ?></p>
         <div class="d-flex gap-3 mt-4 flex-wrap align-items-center hero-fade-4">
